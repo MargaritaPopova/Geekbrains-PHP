@@ -14,6 +14,9 @@
         <p><img src="/images/<?=$model->file?>"></p>
         <hr>
 
-        <p><img src="/images/<?=$model->imageFiles[0]?>"></p>
+        <?php foreach ($model->imageFiles as $image):?>
+            <p><img src="/images/<?=$image?>"></p>
+        <?php endforeach;?>
+
     </div>
 </div>
