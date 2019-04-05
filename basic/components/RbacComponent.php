@@ -53,6 +53,7 @@ class RbacComponent extends Component
 
         $authManager->assign($admin,2);
         $authManager->assign($user,3);
+        $authManager->assign($admin,4);
     }
 
     public function canCreateActivity():bool{

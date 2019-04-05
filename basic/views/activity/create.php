@@ -6,6 +6,9 @@
  * Time: 18:27
  * @var $model \app\models\Activity
  */
+
+use yii\helpers\Html;
+//use yii\bootstrap\Html;
 ?>
 
 <div class="row">
@@ -15,23 +18,23 @@
             'method' => 'POST',
             'options' => ['enctype' => 'multipart/form-data']
         ]);?>
-        <?=Yii::getAlias('@app');?>
-        <?=Yii::getAlias('@webroot');?>
-        <?=$form->field($model, 'title');?>
-        <?=$form->field($model, 'description')->textarea(['data-id' => '1']);?>
-        <?=$form->field($model, 'repeated')->dropDownList($model->getRepeatTypes());?>
-        <?=$form->field($model, 'start_date');?>
-        <?=$form->field($model, 'is_blocked')->checkbox();?>
-        <?=$form->field($model, 'email',
-            ['enableAjaxValidation' => true, 'enableClientValidation' => false]
-        );?>
-        <?=$form->field($model, 'repeat_email');?>
-        <?=$form->field($model, 'use_notification')->checkbox();?>
-        <?=$form->field($model, 'file')->fileInput();?>
-        <?=$form->field($model,'imageFiles[]')->fileInput(['multiple' => true, 'accept' => 'image/*'])?>
-
+        <?= $form->field($model, 'title') ?>
+        <?= $form->field($model, 'description')->textarea() ?>
+        <?= $form->field($model, 'date_start', [
+            'enableAjaxValidation' => true
+        ])?>
+        <?= $form->field($model, 'date_end', [
+            'enableAjaxValidation' => true
+        ]) ?>
+        <?= $form->field($model, 'images[]')->fileInput(['multiple' => true, 'accept' =>'image/*']) ?>
+        <?= $form->field($model, 'is_blocked')->checkbox() ?>
+        <?= $form->field($model, 'use_notification')->checkbox() ?>
+        <?= $form->field($model, 'email', [
+            'enableAjaxValidation' => true,
+            'enableClientValidation' => false
+        ]) ?>
         <div class="form-group">
-            <button type="submit">Отправить</button>
+            <?= Html::submitButton('Отправить', ['class' => 'btn btn-primary']) ?>
         </div>
         <?php \yii\bootstrap\ActiveForm::end();?>
     </div>

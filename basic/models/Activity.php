@@ -49,15 +49,12 @@ class Activity extends ActivityBase
             [['title', 'date_start'], 'required'],
             ['description', 'string', 'max' => 255],
             [['is_blocked', 'use_notification'], 'boolean'],
-            ['repeat_type_id', 'in', 'range' => array_keys(
-                ArrayHelper::map($this->getRepeatType()->asArray()->all(),
-                    'id','name'))],
             [['date_start', 'date_end'], 'date', 'format' => 'php:d.m.Y'],
             [['date_start', 'date_end'], 'validateDates'],
             ['email', 'required', 'when' => function($model) {
                 return $model->use_notification == 1 ? true : false;
             }],
-            ['images', 'file', 'mimeTypes' => 'image/*', 'maxFiles' => 10]
+            ['images', 'file', 'mimeTypes' => 'images/*', 'maxFiles' => 10]
         ],parent::rules());
     }
 
@@ -108,20 +105,4 @@ class Activity extends ActivityBase
         $this->attributes = $data;
     }
 
-
-    public function getRepeatTypes() {
-                static $repeat_types;
-                if (!isset($repeat_types)) {
-                    $repeat_types = (new Query())->select('*')
-                        ->from('activity_repeat_type')->all();
-                    $repeat_types = ArrayHelper::map($repeat_types, 'id', 'name');
-                }
-                return $repeat_types;
-            }
-
-            public function getRepeatTypeName($id)
-            {
-                $data = $this->getRepeatTypes();
-                return array_key_exists($id, $data) ? $data[$id] : false;
-            }
 }
