@@ -1,17 +1,33 @@
 <?php
 
 $params = require __DIR__ . '/params.php';
-$db = require __DIR__ . '/db.php';
+$db = file_exists(__DIR__ . '/db_local.php')
+    ? (require __DIR__ . '/db_local.php')
+    : (require __DIR__ . '/db.php');
+
 
 $config = [
     'id' => 'basic',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
+    'language' => 'ru-Ru',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
         '@npm'   => '@vendor/npm-asset',
+        '@my_alias' => 'http://'
     ],
     'components' => [
+        'auth'=>['class'=>\app\components\AuthComponent::class],
+        'activity' => ['class' => \app\components\ActivityComponent::class,
+            'model_class' => \app\models\Activity::class
+        ],
+        'day' => ['class' => \app\components\DayComponent::class,
+            'model_class' => \app\models\Day::class
+        ],
+        'rbac'=>['class'=>\app\components\RbacComponent::class],
+        'authManager'=>[
+            'class'=>\yii\rbac\DbManager::class
+        ],
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => 'SGASJ7IEkzR-qpQ8BW5TaxtcRnFvcWt1',
@@ -20,7 +36,7 @@ $config = [
             'class' => 'yii\caching\FileCache',
         ],
         'user' => [
-            'identityClass' => 'app\models\User',
+            'identityClass' => 'app\models\Users',
             'enableAutoLogin' => true,
         ],
         'errorHandler' => [
