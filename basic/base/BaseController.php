@@ -10,6 +10,8 @@ namespace app\base;
 
 
 use yii\web\Controller;
+use yii\web\HttpException;
+
 
 class BaseController extends Controller
 {
@@ -22,4 +24,13 @@ class BaseController extends Controller
 
         return $result;
     }
+
+    public function beforeAction($action)
+    {
+        if(\Yii::$app->user->isGuest){
+            throw new HttpException(401,'Need authorisation');
+        }
+        return parent::beforeAction($action);
+    }
+
 }

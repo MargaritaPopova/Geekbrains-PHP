@@ -10,23 +10,15 @@ namespace app\models;
 
 
 use app\models\rules\NotAdminRule;
-use function foo\func;
-use function Sodium\compare;
 use yii\base\Model;
+use app\base\BaseModel;
+use yii\db\Query;
+use yii\helpers\ArrayHelper;
 
-class Activity extends Model
+class Activity extends ActivityBase
 {
-    public $title;
-    public $description;
-    public $start_date;
-//    public $repeat_type;
-    public $repeated;
-    public $is_blocked;
-    public $email;
-    public $use_notification;
-    public $repeat_email;
-    public $file;
-    public $imageFiles;
+
+    public $images;
 
 
     protected static $repeat_types = [
@@ -39,11 +31,11 @@ class Activity extends Model
 
     public function beforeValidate()
     {
-        if($this->start_date) {
+        if($this->date_start) {
             $date = \DateTime::createFromFormat('d.m.Y', $this->start_date);
 
             if($date) {
-                $this->start_date = $date->format('Y-m-d');
+                $this->date_start = $date->format('Y-m-d');
             }
         }
 
@@ -52,51 +44,84 @@ class Activity extends Model
 
     public function rules()
     {
-        return [
-            [['title', 'start_date'], 'required'],
-            [['title', 'description'], 'trim'],
-            ['description', 'string', 'min' => 10, 'max' => 500],
+        return array_merge([
+            [['title', 'description', 'email'], 'trim'],
+            [['title', 'date_start'], 'required'],
+            ['description', 'string', 'max' => 255],
             [['is_blocked', 'use_notification'], 'boolean'],
-            ['start_date', 'date', 'format' => 'php:Y-m-d'],
-            ['repeated', 'in', 'range' => array_keys(self::$repeat_types)],
-            ['email', 'email'],
-            ['repeat_email', 'compare', 'compareAttribute' => 'email', 'message' => 'Значения email должны совпадать'],
-            ['email', 'required', 'when' => function($model){
-                return $model->use_notification == 1? true : false;
+            ['repeat_type_id', 'in', 'range' => array_keys(
+                ArrayHelper::map($this->getRepeatType()->asArray()->all(),
+                    'id','name'))],
+            [['date_start', 'date_end'], 'date', 'format' => 'php:d.m.Y'],
+            [['date_start', 'date_end'], 'validateDates'],
+            ['email', 'required', 'when' => function($model) {
+                return $model->use_notification == 1 ? true : false;
             }],
-            //['title', 'notAdmin']
-            [['imageFiles'],'file','extensions' => ['jpg','png'], 'maxFiles' => 10],
-            ['title', NotAdminRule::class]
-        ];
+            ['images', 'file', 'mimeTypes' => 'image/*', 'maxFiles' => 10]
+        ],parent::rules());
     }
-//
-//    public function notAdmin($attr) {
-//        if($this->title == 'admin') {
-//            $this->addError('title', 'Заголовок не может быть admin');
-//        }
-//    }
 
-    public function attributeLabels()
+    /**
+     * @param $attribute
+     * @throws \Exception
+     */
+    public function validateDates($attribute)
     {
-        return [
-            'title' => 'Название',
-            'description' => 'Описание',
-            'start_date' => 'Дата начала',
-            'repeated' => 'Повторять событие',
-            'is_blocked' => 'Блокирующее событие',
-            'use_notification' => 'Отправить уведомление о событии'
+        $date_start = \DateTime::createFromFormat('d.m.Y', $this->date_start);
+        $date_start = $date_start ? intval($date_start->format('Ymd')) : 0;
+        $date_end = \DateTime::createFromFormat('d.m.Y', $this->date_end);
+        $date_end = $date_end ? intval($date_end->format('Ymd')) : 0;
+        $current_date = intval((new \DateTime())->format('Ymd'));
+        if ($attribute == 'date_start') {
+            if ($date_start && $date_start <= $current_date) {
+                $this->addError('date_start', 'Дата начала уже прошла');
+            }
+        }
+        if ($attribute == 'date_end') {
+            if ($date_start && $date_end && $date_end < $date_start) {
+                $this->addError('date_end', 'Дата окончания не может быть меньше даты начала');
 
-        ];
+            }
+        }
     }
+
+    public function getDataForStorage() {
+        $data = $this->attributes;
+        $data['user_id'] = 1;
+        unset($data['images']);
+        $data['date_start'] = \DateTime::createFromFormat('d.m.Y', $data['date_start'])
+            ->format('Y-m-d');
+        if ($data['date_end']) {
+            $data['date_end'] = \DateTime::createFromFormat('d.m.Y', $data['date_end'])
+                ->format('Y-m-d');
+        }
+        return $data;
+    }
+    public function loadFromStorageData($data) {
+        $data['images'] = array();
+        $data['date_start'] = \DateTime::createFromFormat('Y-m-d H:i:s', $data['date_start'])
+            ->format('d.m.Y');
+        if ($data['date_end']) {
+            $data['date_end'] = \DateTime::createFromFormat('Y-m-d H:i:s', $data['date_end'])
+                ->format('d.m.Y');
+        }
+        $this->attributes = $data;
+    }
+
 
     public function getRepeatTypes() {
-        return static::$repeat_types;
-    }
+                static $repeat_types;
+                if (!isset($repeat_types)) {
+                    $repeat_types = (new Query())->select('*')
+                        ->from('activity_repeat_type')->all();
+                    $repeat_types = ArrayHelper::map($repeat_types, 'id', 'name');
+                }
+                return $repeat_types;
+            }
 
-    public function getRepeatType($id) {
-        $data = $this->getRepeatTypes();
-        return array_key_exists($id, $data) ? $data[$id] : false;
-    }
-
-
+            public function getRepeatTypeName($id)
+            {
+                $data = $this->getRepeatTypes();
+                return array_key_exists($id, $data) ? $data[$id] : false;
+            }
 }
